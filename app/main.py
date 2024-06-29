@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import models
-from .database import engine
+from .database import engine, Base
 from .routers import user, auth, admin
 
 
@@ -30,6 +30,11 @@ app.include_router(admin.router)
 @app.get("/")
 def root():
     return {"message": "Hello World"}
+
+# # Create tables on startup
+# @app.on_event("startup")
+# def on_startup():
+#     Base.metadata.create_all(bind=engine)
 
 
 
