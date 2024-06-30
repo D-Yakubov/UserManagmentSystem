@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 from sqlalchemy.sql.sqltypes import TIMESTAMP
+from datetime import datetime
 
 from .database import Base
 
@@ -35,5 +36,12 @@ class LoginLogout(Base):
     login_time = Column(DateTime, nullable=False)
     logout_time = Column(DateTime)
 
+class TokenBlacklist(Base):
+    __tablename__ = "token_blacklist"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, index=True)
+    blacklisted_on = Column(DateTime, default=datetime.utcnow)
+    
     # Define relationship with User table
     # user = relationship("User", backref="login_logout_entries", foreign_keys=[user_id, username])

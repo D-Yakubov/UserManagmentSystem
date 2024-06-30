@@ -3,6 +3,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, status, HTTPException, Response
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from ..oauth2 import oauth2_scheme
+from ..utils import blacklist_token
 
 from .. import database, schemas, models, utils, oauth2
 
@@ -26,9 +28,34 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session =
     db.add(login_entry)
     db.commit()
 
+
     # create a token
     # return token
 
     access_token = oauth2.create_access_token(data={"user_id": user.id})
 
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
+    blacklist_token(db, token)
+
+    user = db.query(models.User).filter(
+        models.User.email == token.username).first()
+    
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid User")
+
+    if not utils.verify_password(token.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Password")
+    
+    logout_entry = models.LoginLogout(username=user.username, logout_time=datetime.now())
+    db.add(logout_entry)
+    db.commit()
+    return {"message": "Successfully logged out"}
+
+
+@router.get('/protected-route', response_model=schemas.User)
+def protected_route(current_user: models.User = Depends(oauth2.get_current_user)):
+    return current_user

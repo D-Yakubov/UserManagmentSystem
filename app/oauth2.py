@@ -5,6 +5,7 @@ from fastapi import Depends, status, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from .config import settings
+from .utils import is_token_blacklisted
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
 
@@ -28,8 +29,10 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 
-def verify_access_token(token: str, credentials_exception):
+def verify_access_token(token: str, credentials_exception, db: Session):
     try:
+        if is_token_blacklisted(db, token):
+            raise credentials_exception
 
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         id: str = payload.get("user_id")
@@ -48,7 +51,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
                                           detail=f"Could not validate credentials",
                                           headers={"WWW-Authenticate": "Bearer"})
 
-    token = verify_access_token(token, credentials_exception)
+    token = verify_access_token(token, credentials_exception, db)
 
     user = db.query(models.User).filter(models.User.id == token.id).first()
 

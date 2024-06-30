@@ -6,7 +6,7 @@ from .database import engine, Base
 from .routers import user, auth, admin
 
 
-#models.Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 # Alembic working insted of this enginee
 
 app = FastAPI()

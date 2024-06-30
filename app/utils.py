@@ -1,4 +1,15 @@
 import bcrypt
+from sqlalchemy.orm import Session
+from datetime import datetime
+from .models import TokenBlacklist
+
+def blacklist_token(db: Session, token: str):
+    blacklisted_token = TokenBlacklist(token=token, blacklisted_on=datetime.utcnow())
+    db.add(blacklisted_token)
+    db.commit()
+
+def is_token_blacklisted(db: Session, token: str) -> bool:
+    return db.query(TokenBlacklist).filter(TokenBlacklist.token == token).first() is not None
 
 #pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
