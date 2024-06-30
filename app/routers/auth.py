@@ -15,14 +15,14 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session =
         models.User.email == user_credentials.username).first()
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Credentials")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid User")
 
     if not utils.verify_password(user_credentials.password, user.password):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Credentials")
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Password")
 
     # Insert login record into LoginLogout table
-    login_entry = models.LoginLogout(user_id=user.id, username=user.username, login_time=datetime.now())
+    login_entry = models.LoginLogout(username=user.username, login_time=datetime.now())
     db.add(login_entry)
     db.commit()
 
